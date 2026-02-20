@@ -1,0 +1,39 @@
+name: Security Scan Pipeline
+
+permissions:
+  contents: read
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Secret Scan (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+
+      - name: SAST Scan (Semgrep)
+        uses: returntocorp/semgrep-action@v1
+
+      - name: Dependency Scan (OWASP Dependency Check)
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: cicd-security-pipeline
+          path: "."
+          format: "HTML"
+          out: "reports"
+
+      - name: Upload Dependency Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: reports/
+
+      - name: IaC Scan (Checkov)
+        uses: bridgecrewio/checkov-action@master
